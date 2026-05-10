@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "TZT6fNgtGUWMsXip6xqwC"
+uri = "file://artifacts/dtc-bus/public/hero-bus.png"
+type = "image"
+title = "Classic red DTC bus on Delhi street"

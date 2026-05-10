@@ -1,22 +1,28 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: DTC Bus Booking API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: buses
+    description: Bus route and schedule operations
+  - name: bookings
+    description: Seat booking operations
+  - name: dashboard
+    description: Dashboard summary operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +30,280 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: registerUser
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegisterInput"
+      responses:
+        "201":
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: loginUser
+      tags: [auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logoutUser
+      tags: [auth]
+      summary: Logout user
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get current logged-in user
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /buses/search:
+    get:
+      operationId: searchBus
+      tags: [buses]
+      summary: Search bus by number
+      parameters:
+        - name: busNumber
+          in: query
+          required: true
+          schema:
+            type: string
+          description: DTC bus number to search
+      responses:
+        "200":
+          description: Bus details and route
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusSearchResult"
+        "404":
+          description: Bus not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /buses/{busNumber}/stops:
+    get:
+      operationId: getBusStops
+      tags: [buses]
+      summary: Get all stops for a bus route
+      parameters:
+        - name: busNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of stops
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BusStop"
+        "404":
+          description: Bus not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /buses/popular:
+    get:
+      operationId: getPopularRoutes
+      tags: [buses]
+      summary: Get popular DTC bus routes
+      responses:
+        "200":
+          description: List of popular bus routes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BusRoute"
+
+  /bookings:
+    get:
+      operationId: listBookings
+      tags: [bookings]
+      summary: List all bookings for the current user
+      responses:
+        "200":
+          description: User bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createBooking
+      tags: [bookings]
+      summary: Book a seat on a bus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingInput"
+      responses:
+        "201":
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /bookings/{id}:
+    get:
+      operationId: getBooking
+      tags: [bookings]
+      summary: Get a specific booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "404":
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: cancelBooking
+      tags: [bookings]
+      summary: Cancel a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Booking cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get user dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +314,243 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - createdAt
+
+    UserRegisterInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+        password:
+          type: string
+          minLength: 6
+      required:
+        - name
+        - email
+        - password
+
+    UserLoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        message:
+          type: string
+        alreadyLoggedIn:
+          type: boolean
+      required:
+        - user
+        - message
+
+    BusStop:
+      type: object
+      properties:
+        stopNumber:
+          type: integer
+        stopName:
+          type: string
+        estimatedArrivalMinutes:
+          type: integer
+        village:
+          type: string
+        district:
+          type: string
+      required:
+        - stopNumber
+        - stopName
+        - estimatedArrivalMinutes
+
+    BusRoute:
+      type: object
+      properties:
+        busNumber:
+          type: string
+        origin:
+          type: string
+        destination:
+          type: string
+        totalStops:
+          type: integer
+        frequency:
+          type: string
+        type:
+          type: string
+      required:
+        - busNumber
+        - origin
+        - destination
+        - totalStops
+        - frequency
+        - type
+
+    BusSearchResult:
+      type: object
+      properties:
+        busNumber:
+          type: string
+        origin:
+          type: string
+        destination:
+          type: string
+        totalStops:
+          type: integer
+        frequency:
+          type: string
+        type:
+          type: string
+        nextDepartures:
+          type: array
+          items:
+            type: string
+        stops:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusStop"
+        availableSeats:
+          type: integer
+      required:
+        - busNumber
+        - origin
+        - destination
+        - totalStops
+        - frequency
+        - type
+        - nextDepartures
+        - stops
+        - availableSeats
+
+    BookingInput:
+      type: object
+      properties:
+        busNumber:
+          type: string
+        fromStop:
+          type: string
+        toStop:
+          type: string
+        travelDate:
+          type: string
+        passengerName:
+          type: string
+        passengerAge:
+          type: integer
+        seatCount:
+          type: integer
+      required:
+        - busNumber
+        - fromStop
+        - toStop
+        - travelDate
+        - passengerName
+        - passengerAge
+        - seatCount
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        busNumber:
+          type: string
+        fromStop:
+          type: string
+        toStop:
+          type: string
+        travelDate:
+          type: string
+        passengerName:
+          type: string
+        passengerAge:
+          type: integer
+        seatCount:
+          type: integer
+        status:
+          type: string
+        bookingRef:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - busNumber
+        - fromStop
+        - toStop
+        - travelDate
+        - passengerName
+        - passengerAge
+        - seatCount
+        - status
+        - bookingRef
+        - createdAt
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalBookings:
+          type: integer
+        upcomingBookings:
+          type: integer
+        cancelledBookings:
+          type: integer
+        recentBookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Booking"
+        popularRoutes:
+          type: array
+          items:
+            type: string
+      required:
+        - totalBookings
+        - upcomingBookings
+        - cancelledBookings
+        - recentBookings
+        - popularRoutes
