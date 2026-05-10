@@ -8,28 +8,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useLang } from "@/lib/language-context";
+import { Bus, MapPin, Calendar, Users } from "lucide-react";
 
 export default function BookPage() {
   const searchString = useSearch();
   const [, setLocation] = useLocation();
+  const { t } = useLang();
   const searchParams = new URLSearchParams(searchString);
   const busNumber = searchParams.get("busNumber") || "";
 
   const { data: user, isLoading: isUserLoading } = useGetCurrentUser({
-    query: {
-      queryKey: getGetCurrentUserQueryKey(),
-      retry: false,
-    }
+    query: { queryKey: getGetCurrentUserQueryKey(), retry: false }
   });
 
   const { data: stops, isLoading: isStopsLoading } = useGetBusStops(
     busNumber,
-    {
-      query: {
-        enabled: !!busNumber,
-        queryKey: getGetBusStopsQueryKey(busNumber),
-      }
-    }
+    { query: { enabled: !!busNumber, queryKey: getGetBusStopsQueryKey(busNumber) } }
   );
 
   const createBooking = useCreateBooking();
@@ -46,8 +41,8 @@ export default function BookPage() {
   if (!busNumber) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
-        <h2 className="text-2xl font-bold">No bus selected</h2>
-        <Button className="mt-4" onClick={() => setLocation("/")}>Go Back Home</Button>
+        <h2 className="text-2xl font-bold">{t("book.noStop")}</h2>
+        <Button className="mt-4" onClick={() => setLocation("/")}>{t("search.goHome")}</Button>
       </div>
     );
   }
@@ -55,7 +50,7 @@ export default function BookPage() {
   if (isUserLoading || isStopsLoading) {
     return (
       <div className="container mx-auto px-4 py-12 max-w-2xl">
-        <Skeleton className="h-[600px] w-full rounded-xl" />
+        <Skeleton className="h-[600px] w-full rounded-2xl" />
       </div>
     );
   }
@@ -68,10 +63,9 @@ export default function BookPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fromStop || !formData.toStop) {
-      toast.error("Please select both boarding and drop stops");
+      toast.error(t("book.selectBothStops"));
       return;
     }
-    
     createBooking.mutate({
       data: {
         busNumber,
@@ -84,7 +78,7 @@ export default function BookPage() {
       }
     }, {
       onSuccess: () => {
-        toast.success("Booking confirmed successfully!");
+        toast.success(t("book.success"));
         setLocation("/bookings");
       },
       onError: (error) => {
@@ -95,19 +89,29 @@ export default function BookPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl min-h-[100dvh]">
-      <Card className="border-t-4 border-t-primary shadow-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Book Seat on Bus {busNumber}</CardTitle>
-          <CardDescription>Secure your journey. Please fill in the details below.</CardDescription>
+      <Card className="border-t-4 border-t-primary shadow-xl rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-rose-50">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+              <Bus className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-extrabold">{t("book.title")} {busNumber}</CardTitle>
+              <CardDescription className="mt-0.5">{t("book.desc")}</CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <form id="booking-form" onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Stop selectors */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-2">
-                <Label htmlFor="fromStop">Boarding Stop *</Label>
-                <Select value={formData.fromStop} onValueChange={(v) => setFormData({...formData, fromStop: v})} required>
-                  <SelectTrigger id="fromStop">
-                    <SelectValue placeholder="Select stop" />
+                <Label htmlFor="fromStop" className="flex items-center gap-1.5 font-semibold">
+                  <MapPin className="h-4 w-4 text-green-500" /> {t("book.boardingStop")} *
+                </Label>
+                <Select value={formData.fromStop} onValueChange={(v) => setFormData({ ...formData, fromStop: v })} required>
+                  <SelectTrigger id="fromStop" className="h-11">
+                    <SelectValue placeholder={t("book.selectStop")} />
                   </SelectTrigger>
                   <SelectContent>
                     {stops?.map(stop => (
@@ -119,10 +123,12 @@ export default function BookPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="toStop">Drop Stop *</Label>
-                <Select value={formData.toStop} onValueChange={(v) => setFormData({...formData, toStop: v})} required>
-                  <SelectTrigger id="toStop">
-                    <SelectValue placeholder="Select stop" />
+                <Label htmlFor="toStop" className="flex items-center gap-1.5 font-semibold">
+                  <MapPin className="h-4 w-4 text-red-500" /> {t("book.dropStop")} *
+                </Label>
+                <Select value={formData.toStop} onValueChange={(v) => setFormData({ ...formData, toStop: v })} required>
+                  <SelectTrigger id="toStop" className="h-11">
+                    <SelectValue placeholder={t("book.selectStop")} />
                   </SelectTrigger>
                   <SelectContent>
                     {stops?.map(stop => (
@@ -135,56 +141,65 @@ export default function BookPage() {
               </div>
             </div>
 
+            {/* Date */}
             <div className="space-y-2">
-              <Label htmlFor="travelDate">Date of Travel *</Label>
-              <Input 
-                id="travelDate" 
-                type="date" 
+              <Label htmlFor="travelDate" className="flex items-center gap-1.5 font-semibold">
+                <Calendar className="h-4 w-4 text-primary" /> {t("book.travelDate")} *
+              </Label>
+              <Input
+                id="travelDate"
+                type="date"
                 value={formData.travelDate}
                 min={new Date().toISOString().split('T')[0]}
-                onChange={(e) => setFormData({...formData, travelDate: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, travelDate: e.target.value })}
                 required
+                className="h-11"
               />
             </div>
 
+            {/* Passenger details */}
             <div className="space-y-4 pt-4 border-t">
-              <h3 className="font-semibold">Passenger Details</h3>
+              <h3 className="font-extrabold flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" /> {t("book.passenger")}
+              </h3>
               <div className="space-y-2">
-                <Label htmlFor="passengerName">Full Name *</Label>
-                <Input 
-                  id="passengerName" 
+                <Label htmlFor="passengerName" className="font-semibold">{t("book.fullName")} *</Label>
+                <Input
+                  id="passengerName"
                   value={formData.passengerName}
-                  onChange={(e) => setFormData({...formData, passengerName: e.target.value})}
-                  placeholder="Enter full name"
+                  onChange={(e) => setFormData({ ...formData, passengerName: e.target.value })}
+                  placeholder={t("book.enterName")}
                   required
+                  className="h-11"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="passengerAge">Age *</Label>
-                  <Input 
-                    id="passengerAge" 
-                    type="number" 
+                  <Label htmlFor="passengerAge" className="font-semibold">{t("book.age")} *</Label>
+                  <Input
+                    id="passengerAge"
+                    type="number"
                     min="1"
                     max="120"
                     value={formData.passengerAge}
-                    onChange={(e) => setFormData({...formData, passengerAge: e.target.value})}
-                    placeholder="Years"
+                    onChange={(e) => setFormData({ ...formData, passengerAge: e.target.value })}
+                    placeholder={t("book.years")}
                     required
+                    className="h-11"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="seatCount">Number of Seats *</Label>
-                  <Select value={formData.seatCount} onValueChange={(v) => setFormData({...formData, seatCount: v})}>
-                    <SelectTrigger id="seatCount">
-                      <SelectValue placeholder="Seats" />
+                  <Label htmlFor="seatCount" className="font-semibold">{t("book.seats")} *</Label>
+                  <Select value={formData.seatCount} onValueChange={(v) => setFormData({ ...formData, seatCount: v })}>
+                    <SelectTrigger id="seatCount" className="h-11">
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">1 Seat</SelectItem>
-                      <SelectItem value="2">2 Seats</SelectItem>
-                      <SelectItem value="3">3 Seats</SelectItem>
-                      <SelectItem value="4">4 Seats</SelectItem>
-                      <SelectItem value="5">5 Seats</SelectItem>
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n} {n === 1 ? t("book.seatsUnit") : t("book.seatsUnits")}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -192,10 +207,12 @@ export default function BookPage() {
             </div>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-between border-t bg-muted/20 px-6 py-4">
-          <Button variant="outline" onClick={() => setLocation(-1)}>Cancel</Button>
-          <Button type="submit" form="booking-form" className="w-full md:w-auto ml-4" disabled={createBooking.isPending}>
-            {createBooking.isPending ? "Confirming..." : "Confirm Booking"}
+        <CardFooter className="flex justify-between border-t bg-gray-50/70 px-6 py-4 gap-3">
+          <Button variant="outline" onClick={() => setLocation(-1 as unknown as string)} className="flex-1 sm:flex-none">
+            {t("book.cancel")}
+          </Button>
+          <Button type="submit" form="booking-form" className="flex-1 sm:flex-none font-semibold h-11" disabled={createBooking.isPending}>
+            {createBooking.isPending ? t("book.confirming") : t("book.confirm")}
           </Button>
         </CardFooter>
       </Card>

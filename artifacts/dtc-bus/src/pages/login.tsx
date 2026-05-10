@@ -7,34 +7,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Bus } from "lucide-react";
+import { Train } from "lucide-react";
+import { useLang } from "@/lib/language-context";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
+  const { t } = useLang();
+
   const { data: user, isLoading } = useGetCurrentUser({
     query: { retry: false }
   });
 
   useEffect(() => {
     if (user && !isLoading) {
-      toast.info("You are already logged in!");
+      toast.info(t("login.alreadyIn"));
       setLocation("/dashboard");
     }
-  }, [user, isLoading, setLocation]);
+  }, [user, isLoading, setLocation, t]);
 
   const loginUser = useLoginUser();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loginUser.mutate({
-      data: { email, password }
-    }, {
+    loginUser.mutate({ data: { email, password } }, {
       onSuccess: () => {
-        toast.success("Login Successful!");
+        toast.success(t("login.success"));
         queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
         setLocation("/dashboard");
       },
@@ -47,52 +47,55 @@ export default function LoginPage() {
   if (isLoading || user) return null;
 
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md shadow-lg border-t-4 border-t-primary">
-        <CardHeader className="space-y-2 text-center pb-6">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-gradient-to-br from-primary/5 to-rose-50 p-4">
+      <Card className="w-full max-w-md shadow-xl border-t-4 border-t-primary">
+        <CardHeader className="space-y-3 text-center pb-6">
           <div className="flex justify-center mb-2">
-            <div className="h-12 w-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-              <Bus className="h-6 w-6" />
+            <div className="h-14 w-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-primary/30">
+              <Train className="h-7 w-7" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Welcome Back</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
+          <div>
+            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1">AI Safar</p>
+            <CardTitle className="text-2xl font-extrabold tracking-tight">{t("login.welcome")}</CardTitle>
+          </div>
+          <CardDescription>{t("login.desc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form id="login-form" onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="name@example.com" 
+              <Label htmlFor="email">{t("login.email")}</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required 
+                required
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-              </div>
-              <Input 
-                id="password" 
-                type="password" 
+              <Label htmlFor="password">{t("login.password")}</Label>
+              <Input
+                id="password"
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required 
+                required
+                className="h-11"
               />
             </div>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" form="login-form" className="w-full" disabled={loginUser.isPending}>
-            {loginUser.isPending ? "Logging in..." : "Log In"}
+        <CardFooter className="flex flex-col space-y-4 pt-2">
+          <Button type="submit" form="login-form" className="w-full h-11 text-base font-semibold" disabled={loginUser.isPending}>
+            {loginUser.isPending ? t("login.loading") : t("login.btn")}
           </Button>
           <div className="text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link href="/register">
-              <a className="font-medium text-primary hover:underline">Sign up</a>
+            {t("login.noAccount")}{" "}
+            <Link href="/register" className="font-semibold text-primary hover:underline">
+              {t("login.signup")}
             </Link>
           </div>
         </CardFooter>
