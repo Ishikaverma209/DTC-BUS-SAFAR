@@ -31,7 +31,7 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.name}</h1>
-          <p className="text-muted-foreground mt-1">Here is your travel summary with DTC Bus Seva.</p>
+          <p className="text-muted-foreground mt-1">Here is your travel summary with AI Safar.</p>
         </div>
         <Button onClick={() => setLocation("/")}>Book New Ticket</Button>
       </div>

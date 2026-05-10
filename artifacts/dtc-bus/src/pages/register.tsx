@@ -60,7 +60,7 @@ export default function RegisterPage() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">Create an Account</CardTitle>
-          <CardDescription>Join DTC Bus Seva to start booking</CardDescription>
+          <CardDescription>Join AI Safar to start booking</CardDescription>
         </CardHeader>
         <CardContent>
           <form id="register-form" onSubmit={handleSubmit} className="space-y-4">
